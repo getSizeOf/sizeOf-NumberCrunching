@@ -2,7 +2,7 @@
 clean:
 	rm -rf *.pyc
 run:
-	python cruncher.py
+	python crunch.py
 test: run
 pull:
 	git pull origin master
