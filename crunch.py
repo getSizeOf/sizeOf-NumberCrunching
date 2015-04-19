@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import math
+import numpy
+import xml.etree.ElementTree as ET
+import matplotlib.pyplot as plot
 
 class crunch(object):
 
@@ -8,15 +10,64 @@ class crunch(object):
         pass
 
     def focalLengthComp(self, dist):
-        return ((2.004 * math.pow(dist, 4.0)) - (21.875 * (math.pow(dist, 3.0))) + 
-            (78.249 * math.pow(dist, 2.0)) - (115.936 * dist) + 111.396)
+        return ((2.004 * (dist ** 4.0)) - (21.875 * (dist ** 3.0)) +
+            (78.249 * (dist ** 2.0)) - (115.936 * dist) + 111.396)
 
     def objectHeight(self, dist, pxHeight, sensorHeight, fLenEff, subHeight):
         return ((pxHeight * dist * sensorHeight) / (fLenEff * subHeight))
+        #FIXME NOT equiv to objHeight()
 
+    def objHeight(self, dist, pxHeight, sensH, fL, sH):
+        focus = 2.0 * math.atan(sensH / (2.0 * fL))
+        halfH = 2.0 * math.tan(focus/2.0)
+        pH = (halfH * dist) / pxHeight
+        return pH * sH
+
+    def strip_keys(self, xmlDict, x=None, y=None):
+        if x is None:
+            x = []
+        if y is None:
+            y = []
+        for key in xmlDict:#key is dataset id
+            values = xmlDict[key]
+            x.append(values[1])#focal length value [0,1]
+            y.append(values[0])#cm to object [0, inf)
+        return x, y
+
+    def crunch_data(self, x, y, deg):
+        fit = numpy.polyfit(x, y, deg)
+        p = numpy.poly1d(fit)
+        #print largest
+        xp1 = numpy.linspace(min(x), max(x))
+        plot.plot(x, y, alpha=0.4)#, 'r--', xp1, p(xp1))
+        plot.plot(xp1, p(xp1), color='r')
+        print "fit: " + str(p)
+        plot.show()
+
+    def parse_xml_data(self, filename):
+        tree = ET.parse(filename)
+        root = tree.getroot()
+        result = dict()
+        currKey = None#current key
+        for child in root:
+            if child.tag == "key":
+                currKey = child.text
+            elif child.tag == "array":
+                arry = []
+                for inner in child:
+                    arry.append(float(inner.text))
+                    if len(arry) is 2:
+                        result[currKey] = arry
+        return result
 
 if __name__=="__main__":
     cruncher = crunch()
-    dist = .447
-    fL = cruncher.focalLengthComp(dist)
-    print(cruncher.objectHeight(dist, 4000, 15.6, fL, 905.44))
+    xml = cruncher.parse_xml_data('data/iPhone6_1.xml')
+    x,y = cruncher.strip_keys(xml)
+    xml = cruncher.parse_xml_data('data/iPhone6_2.xml')
+    x,y = cruncher.strip_keys(xml, x, y)
+    cruncher.crunch_data(x, y, 5)
+    #dist = .447
+    #fL = cruncher.focalLengthComp(dist)
+    #print (cruncher.objHeight(dist, 4000, 15.6, fL, 905.44))
+
