@@ -35,6 +35,10 @@ class crunch(object):
         return x, y
 
     def crunch_data(self, x, y, deg):
+        x = numpy.array(x)
+        x.sort()
+        y = numpy.array(y)
+        y.sort()
         fit = numpy.polyfit(x, y, deg)
         p = numpy.poly1d(fit)
         #print largest
