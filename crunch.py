@@ -14,8 +14,7 @@ class crunch(object):
             (78.249 * (dist ** 2.0)) - (115.936 * dist) + 111.396)
 
     def objectHeight(self, dist, pxHeight, sensorHeight, fLenEff, subHeight):
-        return ((pxHeight * dist * sensorHeight) / (fLenEff * subHeight))
-        #FIXME NOT equiv to objHeight()
+        return (subHeight * dist * sensorHeight) / (fLenEff * pxHeight)
 
     def objHeight(self, dist, pxHeight, sensH, fL, sH):
         focus = 2.0 * math.atan(sensH / (2.0 * fL))
@@ -41,9 +40,8 @@ class crunch(object):
         y.sort()
         fit = numpy.polyfit(x, y, deg)
         p = numpy.poly1d(fit)
-        #print largest
         xp1 = numpy.linspace(min(x), max(x))
-        plot.plot(x, y, alpha=0.4)#, 'r--', xp1, p(xp1))
+        plot.plot(x, y)#, xp1, p(xp1),alpha=0.4)
         plot.plot(xp1, p(xp1), color='r')
         print "fit: " + str(p)
         plot.show()
@@ -64,12 +62,28 @@ class crunch(object):
                         result[currKey] = arry
         return result
 
+    def parse_csv_data(self, filename):
+        x = []
+        y = []
+        i = 10
+        for line in open(filename):
+            line = line.strip()
+            optims = line.split(',')#ideal focus length
+            optimAvg = 0.0
+            for optim in optims:
+                optimAvg += float(optim)
+            i += 3
+            y.append(float(i))#CM to focus
+            x.append(float(optimAvg)/3.0)#
+        return x,y
+
 if __name__=="__main__":
     cruncher = crunch()
-    xml = cruncher.parse_xml_data('data/iPhone6_1.xml')
-    x,y = cruncher.strip_keys(xml)
-    xml = cruncher.parse_xml_data('data/iPhone6_2.xml')
-    x,y = cruncher.strip_keys(xml, x, y)
+    #xml = cruncher.parse_xml_data('data/iPhone6_1.xml')
+    #x,y = cruncher.strip_keys(xml)
+    #xml = cruncher.parse_xml_data('data/iPhone6_2.xml')
+    #x,y = cruncher.strip_keys(xml, x, y)
+    x,y = cruncher.parse_csv_data('data/DROID_MAXX_alt.csv')
     cruncher.crunch_data(x, y, 5)
     #dist = .447
     #fL = cruncher.focalLengthComp(dist)
